@@ -204,7 +204,7 @@ async def api_delete_comments(id,request):
     check_admin(request)
     c = await Comment.find(id)
     if c is None:
-        raise APIResourceNotFoundError('Comment')
+       raise APIResourceNotFoundError('Comment')
     await c.remove()
     return dict(id=id)
 
@@ -236,7 +236,7 @@ async def api_register_user(*, email, name, passwd):
         raise APIError('register:failed', 'email', 'Email is already in use.')
     uid = next_id()
     sha1_passwd = '%s:%s' % (uid, passwd)
-    user = User(id=uid, name=name.strip(), email=email, passwd=hashlib.sha1(sha1_passwd.encode('utf-8')).hexdigest(), image='http://www.imagefully.com/wp-content/uploads/2015/07/Animated-Girl-Hd-Wallpaper.jpg' % hashlib.md5(email.encode('utf-8')).hexdigest())
+    user = User(id=uid, name=name.strip(), email=email, passwd=hashlib.sha1(sha1_passwd.encode('utf-8')).hexdigest(), image='https://www.funnypica.com/wp-content/uploads/2015/05/TOP-50-Beautiful-Girls-Girl-25-of-50.jpg')
     await user.save()
     # make session cookie:
     r = web.Response()
