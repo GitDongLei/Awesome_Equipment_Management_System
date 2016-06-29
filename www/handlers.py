@@ -13,7 +13,7 @@ from aiohttp import web
 
 from coroweb import get, post
 
-from models import User, Comment, Blog, next_id
+from models import Equipment,User, Comment, Blog, next_id
 
 from apis import Page, APIError, APIValueError
 
@@ -139,11 +139,27 @@ def signout(request):
     logging.info('user signed out.')
     return r
 
+@get('/manage/equipments')
+def manage_equipments(*, page='1'):
+    return {
+        '__template__': 'manage_equipments.html',
+        'page_index': get_page_index(page)
+    }
+
+
 @get('/manage/blogs')
 def manage_blogs(*, page='1'):
     return {
         '__template__': 'manage_blogs.html',
         'page_index': get_page_index(page)
+    }
+
+@get('/manage/equipments/create')
+def manage_create_equipment():
+    return {
+        '__template__': 'manage_equipment_edit.html',
+        'id': '',
+        'action': '/api/equipments'
     }
 
 @get('/manage/blogs/create')
@@ -246,6 +262,16 @@ async def api_register_user(*, email, name, passwd):
     r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
     return r
 
+@get('/api/equipments')
+async def api_equipments(*, page='1'):
+    page_index = get_page_index(page)
+    num = await Equipment.findNumber('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page=p, blogs=())
+    equipments = await Equipment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    return dict(page=p, equipments=equipments)
+
 @get('/api/blogs')
 async def api_blogs(*, page='1'):
     page_index = get_page_index(page)
@@ -255,6 +281,7 @@ async def api_blogs(*, page='1'):
         return dict(page=p, blogs=())
     blogs = await Blog.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
     return dict(page=p, blogs=blogs)
+
 
 
 
@@ -270,6 +297,21 @@ async def api_create_blog(request, *, name, summary, content):
     blog = Blog(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image, name=name.strip(), summary=summary.strip(), content=content.strip())
     await blog.save()
     return blog
+
+@post('/api/equipments')
+async def api_create_equipment(request, *, name, summary, content):
+    check_admin(request)
+    if not name or not name.strip():
+        raise APIValueError('name', 'name cannot be empty.')
+    if not summary or not summary.strip():
+        raise APIValueError('summary', 'summary cannot be empty.')
+    if not content or not content.strip():
+        raise APIValueError('content', 'content cannot be empty.')
+    equipment = Equipment(name=name.strip(), model=summary.strip(), asset_number=content.strip(), acessories=content.strip(), user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image)
+    await equipment.save()
+    return equipment
+
+
 
 @get('/api/blogs/{id}')
 async def api_get_blog(*, id):
