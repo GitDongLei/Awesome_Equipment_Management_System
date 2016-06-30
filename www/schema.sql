@@ -4,7 +4,7 @@ create database awesome;
 
 use awesome;
 
-grant select, insert, update, delete on awesome.* to 'www-data'@'localhost' identified by 'www-data';
+grant select, insert, update, delete on awesome.* to 'root'@'localhost' identified by 'password';
 
 create table users (
     `id` varchar(50) not null,
@@ -38,16 +38,17 @@ create table equipment (
     `model` varchar(50) not null,
     `asset_number` varchar(50) not null,
     `acessories` varchar(50) not null,
-    `warehouse` bool not null,
+    `warehouse` varchar(50) not null,
     `user_id` varchar(50) not null,
     `user_name` varchar(50) not null,
     `user_image` varchar(500) not null,
     `borrow_time` real not null,
-    `scrapped` bool not null,
+    `scrapped` varchar(50) not null,
     `created_at` real not null,
     key `idx_created_at` (`created_at`),
     primary key (`id`)
 ) engine=innodb default charset=utf8;
+
 
 create table loan_records(
     `id` varchar(50) not null, 
