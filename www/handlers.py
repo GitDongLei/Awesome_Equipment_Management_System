@@ -162,6 +162,16 @@ def manage_create_equipment():
         'action': '/api/equipments'
     }
 
+@get('/manage/equipments/edit')
+def manage_edit_equipment(*, id):
+    return {
+        '__template__': 'manage_equipment_edit.html',
+        'id': id,
+        'action': '/api/equipments/%s' % id
+    }
+
+
+
 @get('/manage/blogs/create')
 def manage_create_blog():
     return {
@@ -299,18 +309,23 @@ async def api_create_blog(request, *, name, summary, content):
     return blog
 
 @post('/api/equipments')
-async def api_create_equipment(request, *, name, summary, content):
+async def api_create_equipment(request, *, name, model, asset_number, acessories, warehouse, scrapped):
     check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name cannot be empty.')
-    if not summary or not summary.strip():
-        raise APIValueError('summary', 'summary cannot be empty.')
-    if not content or not content.strip():
-        raise APIValueError('content', 'content cannot be empty.')
-    equipment = Equipment(name=name.strip(), model=summary.strip(), asset_number=content.strip(), acessories=content.strip(), user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image)
+    if not model or not model.strip():
+        raise APIValueError('model', 'model cannot be empty.')
+    if not asset_number or not asset_number.strip():
+        raise APIValueError('asset_number', 'asset_number cannot be empty.')
+    equipment = Equipment(name=name.strip(), model=model.strip(), asset_number=asset_number.strip(), acessories=acessories.strip(), warehouse=warehouse.strip(), scrapped=scrapped.strip(), user_id=request.__user__.id, user_name='无', user_image=request.__user__.image)
     await equipment.save()
     return equipment
 
+
+@get('/api/equipments/{id}')
+async def api_get_equipment(*, id):
+    equipment = await Equipment.find(id)
+    return equipment
 
 
 @get('/api/blogs/{id}')
@@ -331,6 +346,26 @@ async def api_create_comment(id, request, *, content):
     comment = Comment(blog_id=blog.id, user_id=user.id, user_name=user.name, user_image=user.image, content=content.strip())
     await comment.save()
     return comment
+
+@post('/api/equipments/{id}')
+async def api_update_equipment(id, request, *, name, model, asset_number, acessories, warehouse, scrapped): 
+    check_admin(request)
+    equipment = await Equipment.find(id)
+    if not name or not name.strip():
+        raise APIValueError('name', 'name cannot be empty.')
+    if not model or not model.strip():
+        raise APIValueError('model', 'model cannot be empty.')
+    if not asset_number or not asset_number.strip():
+        raise APIValueError('asset_number', 'asset_number cannot be empty.')
+    equipment.name = name.strip()
+    equipment.model = model.strip()
+    equipment.asset_number = asset_number.strip()
+    equipment.acessories = acessories.strip()
+    equipment.warehouse = warehouse.strip()
+    equipment.scrapped = scrapped.strip()
+    await equipment.update()
+    return equipment
+
 
 
 @post('/api/blogs/{id}')

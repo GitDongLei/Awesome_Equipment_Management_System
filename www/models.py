@@ -37,12 +37,12 @@ class Equipment(Model):
     model = StringField(ddl='varchar(50)')
     asset_number = StringField(ddl='varchar(50)')
     acessories = StringField(ddl='varchar(50)')
-    warehouse = BooleanField(default=True)
+    warehouse = StringField(default='入库', ddl='varchar(50)')
     user_id = StringField(ddl='varchar(50)')
-    user_name = StringField(ddl='varchar(50)')
+    user_name = StringField(default='无', ddl='varchar(50)')
     user_image = StringField(ddl='varchar(500)')
     borrow_time = FloatField(default=time.time)
-    scrapped = BooleanField(default=False)
+    scrapped = StringField(default='正常', ddl='varchar(50)')
     created_at = FloatField(default=time.time)
 
 class Loan_records(Model):

@@ -1,6 +1,6 @@
 {% extends '__base__.html' %}
 
-{% block title %}编辑设备信息{% endblock %}
+{% block title %}添加设备{% endblock %}
 
 {% block beforehead %}
 
@@ -34,20 +34,24 @@ function initVM(equipment) {
 
 $(function () {
     if (ID) {
-        getJSON('/api/blogs/' + ID, function (err, blog) {
+        getJSON('/api/equipments/' + ID, function (err, equipment) {
             if (err) {
                 return fatal(err);
             }
             $('#loading').hide();
-            initVM(blog);
+            initVM(equipment);
         });
     }
     else {
         $('#loading').hide();
         initVM({
             name: '',
-            summary: '',
-            content: ''
+            model: '',
+            asset_number: '',
+            acessories: '',
+            warehouse: '',
+            scrapped: ''
+
         });
     }
 });
@@ -79,23 +83,53 @@ $(function () {
         <form v-on="submit: submit" class="uk-form uk-form-stacked">
             <div class="uk-alert uk-alert-danger uk-hidden"></div>
             <div class="uk-form-row">
-                <label class="uk-form-label">标题:</label>
+                <label class="uk-form-label">设备名称:</label>
                 <div class="uk-form-controls">
-                    <input v-model="name" name="name" type="text" placeholder="标题" class="uk-width-1-1">
+                    <input v-model="name" name="name" type="text" placeholder="设备名称" class="uk-width-1-1">
                 </div>
             </div>
             <div class="uk-form-row">
-                <label class="uk-form-label">摘要:</label>
+                <label class="uk-form-label">设备型号:</label>
                 <div class="uk-form-controls">
-                    <textarea v-model="summary" rows="4" name="summary" placeholder="摘要" class="uk-width-1-1" style="resize:none;"></textarea>
+                    <textarea v-model="model" rows="1" name="model" placeholder="设备型号" class="uk-width-1-1" style="resize:none;"></textarea>
                 </div>
             </div>
             <div class="uk-form-row">
-                <label class="uk-form-label">内容:</label>
+                <label class="uk-form-label">固定资产编号:</label>
                 <div class="uk-form-controls">
-                    <textarea v-model="content" rows="16" name="content" placeholder="内容" class="uk-width-1-1" style="resize:none;"></textarea>
+                    <textarea v-model="asset_number" rows="1" name="asset_number" placeholder="固定资产编号" class="uk-width-1-1" style="resize:none;"></textarea>
                 </div>
             </div>
+
+            <div class="uk-form-row">
+                <label class="uk-form-label">附件:</label>
+                <div class="uk-form-controls">
+                    <textarea v-model="acessories" rows="1" name="acessories" placeholder="附件" class="uk-width-1-1" style="resize:none;"></textarea>
+                </div>
+            </div>
+
+            <div class="uk-form-row">
+                <label class="uk-form-label">库存状态:</label>
+                <div class="uk-form-controls">
+                    <select v-model="warehouse" class="uk-width-1-1">
+                        <option>入库</option>
+                        <option>借出</option>
+                        <option>oh,my god!</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="uk-form-row">
+                <label class="uk-form-label">运行状态:</label>
+                <div class="uk-form-controls">
+                    <select v-model="scrapped" class="uk-width-1-1">
+                        <option>正常</option>
+                        <option>维修</option>
+                        <option>报废 oh,my god!</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="uk-form-row">
                 <button type="submit" class="uk-button uk-button-primary"><i class="uk-icon-save"></i> 保存</button>
                 <a href="/manage/blogs" class="uk-button"><i class="uk-icon-times"></i> 取消</a>
