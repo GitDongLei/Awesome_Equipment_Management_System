@@ -6,26 +6,19 @@
 
 <script>
 
+
+
 function initVM(data) {
     var vm = new Vue({
         el: '#vm',
         data: {
             equipments: data.equipments,
-            page: data.page
+            page: data.page,
+            user: data.user
         },
         methods: {
             edit_equipment: function (equipment) {
                 location.assign('/manage/equipments/edit?id=' + equipment.id);
-            },
-            delete_blog: function (equipment) {
-                if (confirm('确认要删除“' + equipment.name + '”？删除后不可恢复！')) {
-                    postJSON('/api/blogs/' + blog.id + '/delete', function (err, r) {
-                        if (err) {
-                            return alert(err.message || err.error || err);
-                        }
-                        refresh();
-                    });
-                }
             }
         }
     });
@@ -107,8 +100,8 @@ $(function() {
                         <span v-text="equipment.created_at.toDateTime()"></span>
                     </td>
                     <td>
-                        <a href="#0" v-on="click: edit_equipment(equipment)"><i class="uk-icon-edit"></i>
-                        <a href="#0" v-on="click: delete_blog(equipment)"><i class="uk-icon-trash-o"></i>
+                        <a href="#0" v-if="equipment.user_id==='' && equipment.scrapped==='正常'" v-on="click: edit_equipment(equipment)"  class="uk-button uk-button-primary"> 借用</a>
+                        <a href="#0" v-if="equipment.user_id===user.id" v-on="click: edit_equipment(equipment)"  class="uk-button uk-button-primary"> 续借</a>
                     </td>
                 </tr>
             </tbody>

@@ -146,6 +146,12 @@ def manage_equipments(*, page='1'):
         'page_index': get_page_index(page)
     }
 
+@get('/user/equipments')
+def user_equipments(*, page='1'):
+    return {
+        '__template__': 'user_equipments.html',
+        'page_index': get_page_index(page)
+    }
 
 @get('/manage/blogs')
 def manage_blogs(*, page='1'):
@@ -201,6 +207,14 @@ def manage_comments(*, page='1'):
         '__template__': 'manage_comments.html',
         'page_index': get_page_index(page)
     }
+
+@get('/manage/records')
+def manage_records(*,page='1'):
+    return {
+        '__template__': 'manage_records.html',
+        'page_index': get_page_index(page)
+    }
+    
 
 @get('/blog/{id}')
 async def get_blog(id):
@@ -273,14 +287,15 @@ async def api_register_user(*, email, name, passwd):
     return r
 
 @get('/api/equipments')
-async def api_equipments(*, page='1'):
+async def api_equipments(request, *, page='1'):
+    user=request.__user__ 
     page_index = get_page_index(page)
     num = await Equipment.findNumber('count(id)')
     p = Page(num, page_index)
     if num == 0:
         return dict(page=p, blogs=())
     equipments = await Equipment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
-    return dict(page=p, equipments=equipments)
+    return dict(user=user ,page=p, equipments=equipments)
 
 @get('/api/blogs')
 async def api_blogs(*, page='1'):
@@ -317,7 +332,7 @@ async def api_create_equipment(request, *, name, model, asset_number, acessories
         raise APIValueError('model', 'model cannot be empty.')
     if not asset_number or not asset_number.strip():
         raise APIValueError('asset_number', 'asset_number cannot be empty.')
-    equipment = Equipment(name=name.strip(), model=model.strip(), asset_number=asset_number.strip(), acessories=acessories.strip(), warehouse=warehouse.strip(), scrapped=scrapped.strip(), user_id=request.__user__.id, user_name='无', user_image=request.__user__.image)
+    equipment = Equipment(name=name.strip(), model=model.strip(), asset_number=asset_number.strip(), acessories=acessories.strip(), warehouse=warehouse.strip(), scrapped=scrapped.strip(), user_id='', user_name='无', user_image='')
     await equipment.save()
     return equipment
 
