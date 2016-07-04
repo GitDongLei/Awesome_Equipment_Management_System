@@ -17,9 +17,9 @@ function initVM(data) {
             edit_equipment: function (equipment) {
                 location.assign('/manage/equipments/edit?id=' + equipment.id);
             },
-            delete_blog: function (equipment) {
+            delete_equipment: function (equipment) {
                 if (confirm('确认要删除“' + equipment.name + '”？删除后不可恢复！')) {
-                    postJSON('/api/blogs/' + blog.id + '/delete', function (err, r) {
+                    postJSON('/api/equipments/' + equipment.id + '/delete', function (err, r) {
                         if (err) {
                             return alert(err.message || err.error || err);
                         }
@@ -108,7 +108,7 @@ $(function() {
                     </td>
                     <td>
                         <a href="#0" v-on="click: edit_equipment(equipment)"><i class="uk-icon-edit"></i>
-                        <a href="#0" v-on="click: delete_blog(equipment)"><i class="uk-icon-trash-o"></i>
+                        <a href="#0" v-on="click: delete_equipment(equipment)"><i class="uk-icon-trash-o"></i>
                     </td>
                 </tr>
             </tbody>

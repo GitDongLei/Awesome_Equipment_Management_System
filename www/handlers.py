@@ -13,7 +13,7 @@ from aiohttp import web
 
 from coroweb import get, post
 
-from models import Equipment,User, Comment, Blog, next_id
+from models import Equipment,User, Comment, Blog, next_id, Loan_records
 
 from apis import Page, APIError, APIValueError
 
@@ -201,6 +201,15 @@ def manage_users(*, page='1'):
         'page_index': get_page_index(page)
     }
 
+@get('/user/users')
+def user_users(*, page='1'):
+    return {
+        '__template__': 'user_users.html',
+        'page_index': get_page_index(page)
+    }
+
+
+
 @get('/manage/comments')
 def manage_comments(*, page='1'):
     return {
@@ -215,6 +224,13 @@ def manage_records(*,page='1'):
         'page_index': get_page_index(page)
     }
     
+@get('/user/records')
+def user_records(*,page='1'):
+    return {
+        '__template__': 'user_records.html',
+        'page_index': get_page_index(page)
+    }
+ 
 
 @get('/blog/{id}')
 async def get_blog(id):
@@ -238,6 +254,28 @@ async def api_comments(*, page='1'):
         return dict(page=p, comments=())
     comments = await Comment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
     return dict(page=p, comments=comments)
+
+@get('/api/records')
+async def api_comments(*, page='1'):
+    page_index = get_page_index(page)
+    num = await Loan_records.findNumber('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page=p, records=())
+    records = await Loan_records.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    return dict(page=p, records=records )
+
+@get('/api/user_records')
+async def api_user_records(request, *, page='1'):
+    user=request.__user__ 
+    page_index = get_page_index(page)
+    num = await Loan_records.findNumber('count(id)',where='`user_id`=\'%s\'' % user.id)
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page=p, records=())
+    records = await Loan_records.findAll(where='`user_id`=\'%s\'' % user.id, orderBy='created_at desc', limit=(p.offset, p.limit))
+    return dict(page=p, records=records )
+
 
 @post('/api/comments/{id}/delete')
 async def api_delete_comments(id,request):
@@ -398,6 +436,34 @@ async def api_update_blog(id, request, *, name, summary, content):
     blog.content = content.strip()
     await blog.update()
     return blog
+
+@post('/api/equipments/{id}/borrow')
+async def api_create_comment(id, *, request):
+    user = request.__user__
+    if user is None:
+        raise APIPermissionError('Please signin first.')
+    equipment = await Equipment.find(id)
+    if equipment is None:
+        raise APIResourceNotFoundError('Equipment')
+    comment = Loan_records(equipment_id=equipment.id, equipment_name=equipment.name, equipment_model = equipment.model, acessories = equipment.acessories, user_id=user.id, user_name=user.name, user_image=user.image, action = '借出')
+    await comment.save()
+    equipment.warehouse = '借出'
+    equipment.user_id = user.id.strip()
+    equipment.user_name = user.name.strip()
+    equipment.user_image = user.image.strip()
+    equipment.borrow_time = time.time()
+    await equipment.update()
+    return comment
+
+
+
+@post('/api/equipments/{id}/delete')
+async def api_delete_equipment(request, *, id):
+    check_admin(request)
+    equipment = await Equipment.find(id)
+    await equipment.remove()
+    return dict(id=id)
+
 
 @post('/api/blogs/{id}/delete')
 async def api_delete_blog(request, *, id):

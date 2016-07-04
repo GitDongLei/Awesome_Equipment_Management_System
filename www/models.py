@@ -1,6 +1,6 @@
 import time, uuid
 
-from orm import Model, StringField, BooleanField, FloatField, TextField
+from orm import Model, StringField, BooleanField, FloatField, TextField, IntegerField
 
 def next_id():
     return '%015d%s000' % (int(time.time() * 1000), uuid.uuid4().hex)
@@ -42,6 +42,7 @@ class Equipment(Model):
     user_name = StringField(default='无', ddl='varchar(50)')
     user_image = StringField(ddl='varchar(500)')
     borrow_time = FloatField(default=time.time)
+    time_limit = IntegerField(default=30)
     scrapped = StringField(default='正常', ddl='varchar(50)')
     created_at = FloatField(default=time.time)
 
@@ -50,13 +51,14 @@ class Loan_records(Model):
 
     id = StringField(primary_key=True, default=next_id, ddl='varchar(50)')
     equipment_id = StringField(ddl='varchar(50)')
-    user_id = StringField(ddl='varchar(50)')
+    equipment_name = StringField(ddl='varchar(50)')
+    equipment_model = StringField(ddl='varchar(50)')
+    acessories =  StringField(ddl='varchar(50)')
+    user_id = StringField(ddl='varchar(50)') 
     user_name = StringField(ddl='varchar(50)')
     user_image = StringField(ddl='varchar(500)')
-    acessories =  StringField(ddl='varchar(50)')
-    borrow_time = FloatField(default=time.time)
-    return_time = FloatField(default=time.time)
     created_at = FloatField(default=time.time)
+    action = StringField(ddl='varchar(50)')
 	
 class Comment(Model):
     __table__ = 'comments'

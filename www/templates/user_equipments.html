@@ -8,17 +8,54 @@
 
 
 
-function initVM(data) {
+function initVM(data,DateNow) {
     var vm = new Vue({
         el: '#vm',
         data: {
             equipments: data.equipments,
             page: data.page,
-            user: data.user
+            user: data.user,
+            DateNow: DateNow
         },
         methods: {
             edit_equipment: function (equipment) {
                 location.assign('/manage/equipments/edit?id=' + equipment.id);
+            },
+            borrow_equipment: function (equipment) {
+                if (confirm('确认要借用“' + equipment.name + '”！')) {
+                    postJSON('/api/equipments/' + equipment.id + '/borrow', function (err, r) {
+                        if (err) {
+                            return alert(err.message || err.error || err);
+                        }
+                        refresh();
+                    });
+                }
+            },
+            GetDateDiff: function (startTime, endTime, diffType) {
+                startTime = startTime.replace(/\-/g, "/");
+                endTime = endTime.replace(/\-/g, "/");
+                diffType = diffType.toLowerCase();
+                var sTime = new Date(startTime);
+                var eTime = new Date(endTime);
+                var divNum = 1;
+                switch (diffType) {
+                case "second":
+                    divNum = 1000;
+                break;
+                case "minute":
+                    divNum = 1000 * 60;
+                break;
+                case "hour":
+                    divNum = 1000 * 3600;
+                break;
+                case "day":
+                    divNum = 1000 * 3600 * 24;
+                break;
+                default:
+                break;
+                }
+                var difTest=parseInt((eTime.getTime() - sTime.getTime()) / parseInt(divNum));
+                return difTest;
             }
         }
     });
@@ -33,7 +70,9 @@ $(function() {
             return fatal(err);
         }
         $('#loading').hide();
-        initVM(results);
+        var myDate = new Date();
+        var DateNow = myDate.toLocaleDateString();
+        initVM(results, DateNow);
     });
 });
 
@@ -46,9 +85,9 @@ $(function() {
     <div class="uk-width-1-1 uk-margin-bottom">
         <div class="uk-panel uk-panel-box">
             <ul class="uk-breadcrumb">
-                <li><a href="/manage/records">借用记录</a></li>
+                <li><a href="/user/records">借用记录</a></li>
                 <li class="uk-active"><span>设备</span></li>
-                <li><a href="/manage/users">用户</a></li>
+                <li><a href="/user/users">用户</a></li>
             </ul>
         </div>
     </div>
@@ -61,7 +100,6 @@ $(function() {
     </div>
 
     <div id="vm" class="uk-width-1-1">
-        <a href="/manage/equipments/create" class="uk-button uk-button-primary"><i class="uk-icon-plus"></i> 添加设备</a>
 
         <table class="uk-table uk-table-hover">
             <thead>
@@ -100,8 +138,9 @@ $(function() {
                         <span v-text="equipment.created_at.toDateTime()"></span>
                     </td>
                     <td>
-                        <a href="#0" v-if="equipment.user_id==='' && equipment.scrapped==='正常'" v-on="click: edit_equipment(equipment)"  class="uk-button uk-button-primary"> 借用</a>
-                        <a href="#0" v-if="equipment.user_id===user.id" v-on="click: edit_equipment(equipment)"  class="uk-button uk-button-primary"> 续借</a>
+                        <a href="#0" v-if="equipment.user_id==='' && equipment.scrapped==='正常'" v-on="click: borrow_equipment(equipment)"  class="uk-button uk-button-primary"> 借用</a>
+                        <a href="#0" v-if="equipment.user_id===user.id && GetDateDiff (equipment.created_at.toDateTime(), DateNow, 'day')>equipment.time_limit" v-on="click: edit_equipment(equipment)"  class="uk-button uk-button-primary"> 续借</a>
+                        <button v-if="equipment.user_id===user.id && GetDateDiff (equipment.created_at.toDateTime(), DateNow, 'day')<=equipment.time_limit" class="uk-button uk-htmleditor-button-code" type="button" disabled="disabled"> 续借</button>
                     </td>
                 </tr>
             </tbody>
