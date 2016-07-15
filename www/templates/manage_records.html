@@ -1,6 +1,6 @@
 {% extends '__base__.html' %}
 
-{% block title %}评论{% endblock %}
+{% block title %}借用记录{% endblock %}
 
 {% block beforehead %}
 
@@ -11,12 +11,12 @@ function initVM(data) {
 	var vm = new Vue({
 		el: '#vm',
 		data: {
-			comments: data.comments,
+			records: data.records,
 			page: data.page
 		},
 		methods: {
-			delete_comment: function (comment) {
-                var content= comment.content.length > 20 ? comment.content.substring(0, 20) + '...' : comment.content;
+			delete_comment: function (record) {
+                var content= record.content.length > 20 ? comment.content.substring(0, 20) + '...' : comment.content;
                 if(confirm('确认要删除评论“'+ comment.content + '”？删除后不可恢复！')) {
                 	postJSON('/api/comments/' + comment.id + '/delete', function (err,r) {
                 		if(err) {
@@ -55,6 +55,7 @@ $(function() {
                 <li class="uk-active"><span>借用记录</span></li>
                 <li><a href="/manage/equipments">设备</a></li>
                 <li><a href="/manage/users">用户</a></li>
+                <li><a href="/manage/equipmentsOnLoan">借用设备</a></li>
             </ul>
         </div>
     </div>
@@ -70,25 +71,33 @@ $(function() {
         <table class="uk-table uk-table-hover">
             <thead>
                 <tr>
-                    <th class="uk-width-2-10">作者</th>
-                    <th class="uk-width-5-10">内容</th>
-                    <th class="uk-width-2-10">创建时间</th>
+                    <th class="uk-width-1-10">设备名称</th>
+                    <th class="uk-width-1-10">设备型号</th>
+                    <th class="uk-width-1-10">附件</th>
+                    <th class="uk-width-1-10">借用人</th>
+                    <th class="uk-width-1-10">时间</th>
                     <th class="uk-width-1-10">操作</th>
                 </tr>
             </thead>
             <tbody>
-                <tr v-repeat="comment: comments" >
+                <tr v-repeat="record: records" >
                     <td>
-                        <span v-text="comment.user_name"></span>
+                        <span v-text="record.equipment_name"></span>
                     </td>
                     <td>
-                        <span v-text="comment.content"></span>
+                        <span v-text="record.equipment_model"></span>
                     </td>
                     <td>
-                        <span v-text="comment.created_at.toDateTime()"></span>
+                        <span v-text="record.acessoris"></span>
                     </td>
                     <td>
-                        <a href="#0" v-on="click: delete_comment(comment)"><i class="uk-icon-trash-o"></i>
+                        <span v-text="record.user_name"></span>
+                    </td>
+                    <td>
+                        <span v-text="record.created_at.toDateTime()"></span>
+                    </td>
+                    <td>
+                        <span v-text="record.action"></span>
                     </td>
                 </tr>
             </tbody>

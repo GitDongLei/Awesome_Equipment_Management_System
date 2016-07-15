@@ -140,17 +140,28 @@ def signout(request):
     return r
 
 @get('/manage/equipments')
-def manage_equipments(*, page='1'):
+def manage_equipments(*, page='1', search_info=''):
     return {
         '__template__': 'manage_equipments.html',
+        'page_index': get_page_index(page),
+	'search_info': search_info
+    }
+
+@get('/manage/equipmentsOnLoan')
+def manage_equipmentsOnLoan(*, page='1'):
+    return {
+        '__template__': 'manage_equipmentsOnLoan.html',
         'page_index': get_page_index(page)
     }
 
+
+
 @get('/user/equipments')
-def user_equipments(*, page='1'):
+def user_equipments(*, page='1', search_info=''):
     return {
         '__template__': 'user_equipments.html',
-        'page_index': get_page_index(page)
+        'page_index': get_page_index(page),
+	'search_info': search_info
     }
 
 @get('/manage/blogs')
@@ -256,7 +267,7 @@ async def api_comments(*, page='1'):
     return dict(page=p, comments=comments)
 
 @get('/api/records')
-async def api_comments(*, page='1'):
+async def api_records(*, page='1'):
     page_index = get_page_index(page)
     num = await Loan_records.findNumber('count(id)')
     p = Page(num, page_index)
@@ -325,15 +336,31 @@ async def api_register_user(*, email, name, passwd):
     return r
 
 @get('/api/equipments')
-async def api_equipments(request, *, page='1'):
+async def api_equipments(request, *, page='1', search_info=''):
     user=request.__user__ 
     page_index = get_page_index(page)
-    num = await Equipment.findNumber('count(id)')
+    search_msg = 'CONCAT(id, name, model, asset_number, acessories, warehouse, user_id, user_name, user_image, borrow_time, time_limit, scrapped, created_at) like \'%%%%%s%%%%\'' % search_info
+    logging.info('api_equipment ----------------- search_msg='+search_msg)
+    num = await Equipment.findNumber('count(id)',where=search_msg)
+    logging.info('api_equipment ----------------- the num of search result=%s' % num)
     p = Page(num, page_index)
     if num == 0:
-        return dict(page=p, blogs=())
-    equipments = await Equipment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+        return dict(user=user, page=p, equipments=())
+    equipments = await Equipment.findAll(where=search_msg, orderBy='created_at desc', limit=(p.offset, p.limit))
     return dict(user=user ,page=p, equipments=equipments)
+
+
+@get('/api/equipmentsOnLoan')
+async def api_equipmentsOnLoan(request, *, page='1'):
+    user=request.__user__ 
+    page_index = get_page_index(page)
+    num = await Equipment.findNumber('count(id)',where='`user_id`!=\'\'')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(user=user, page=p, equipments=())
+    equipments = await Equipment.findAll(where='`user_id`!=\'\'', orderBy='created_at desc', limit=(p.offset, p.limit))
+    return dict(user=user ,page=p, equipments=equipments)
+
 
 @get('/api/blogs')
 async def api_blogs(*, page='1'):
@@ -370,7 +397,7 @@ async def api_create_equipment(request, *, name, model, asset_number, acessories
         raise APIValueError('model', 'model cannot be empty.')
     if not asset_number or not asset_number.strip():
         raise APIValueError('asset_number', 'asset_number cannot be empty.')
-    equipment = Equipment(name=name.strip(), model=model.strip(), asset_number=asset_number.strip(), acessories=acessories.strip(), warehouse=warehouse.strip(), scrapped=scrapped.strip(), user_id='', user_name='无', user_image='')
+    equipment = Equipment(name=name.strip(), model=model.strip(), asset_number=asset_number.strip(), acessories=acessories.strip(), warehouse=warehouse.strip(), scrapped=scrapped.strip(), user_id='', user_name='', user_image='')
     await equipment.save()
     return equipment
 
@@ -437,23 +464,74 @@ async def api_update_blog(id, request, *, name, summary, content):
     await blog.update()
     return blog
 
-@post('/api/equipments/{id}/borrow')
-async def api_create_comment(id, *, request):
+@post('/api/equipments/{id}/loanApproval')
+async def api_laonApproval_equipment(id, *, request):
     user = request.__user__
     if user is None:
         raise APIPermissionError('Please signin first.')
     equipment = await Equipment.find(id)
     if equipment is None:
         raise APIResourceNotFoundError('Equipment')
-    comment = Loan_records(equipment_id=equipment.id, equipment_name=equipment.name, equipment_model = equipment.model, acessories = equipment.acessories, user_id=user.id, user_name=user.name, user_image=user.image, action = '借出')
-    await comment.save()
+    Loan_record = Loan_records(equipment_id=equipment.id, equipment_name=equipment.name, equipment_model = equipment.model, acessories = equipment.acessories, user_id=equipment.user_id, user_name=equipment.user_name, user_image=equipment.user_image, action = '借出')
+    await Loan_record.save()
     equipment.warehouse = '借出'
+    await equipment.update()
+    return Loan_record
+
+
+@post('/api/equipments/{id}/loanRefuse')
+async def api_laonRefuse_equipment(id, *, request):
+    user = request.__user__
+    if user is None:
+        raise APIPermissionError('Please signin first.')
+    equipment = await Equipment.find(id)
+    if equipment is None:
+        raise APIResourceNotFoundError('Equipment')
+    equipment.warehouse = '入库'
+    equipment.user_id = ''
+    equipment.user_name = ''
+    equipment.user_image = ''
+    equipment.borrow_time = time.time()
+    await equipment.update()
+    return equipment
+
+
+@post('/api/equipments/{id}/borrowRequest')
+async def api_borrowRequest_equipment(id, *, request):
+    user = request.__user__
+    if user is None:
+        raise APIPermissionError('Please signin first.')
+    equipment = await Equipment.find(id)
+    if equipment is None:
+        raise APIResourceNotFoundError('Equipment')
+    equipment.warehouse = '申请借出'
     equipment.user_id = user.id.strip()
     equipment.user_name = user.name.strip()
     equipment.user_image = user.image.strip()
     equipment.borrow_time = time.time()
     await equipment.update()
-    return comment
+    return equipment
+
+
+
+@post('/api/equipments/{id}/return')
+async def api_return_equipment(id, *, request):
+    user = request.__user__
+    if user is None:
+        raise APIPermissionError('Please signin first.')
+    equipment = await Equipment.find(id)
+    if equipment is None:
+        raise APIResourceNotFoundError('Equipment')
+    Loan_record = Loan_records(equipment_id=equipment.id, equipment_name=equipment.name, equipment_model = equipment.model, acessories = equipment.acessories, user_id=equipment.user_id, user_name=equipment.user_name, user_image=equipment.user_image, action = '归还')
+    await Loan_record.save()
+    equipment.warehouse = '入库'
+    equipment.user_id = ''
+    equipment.user_name = ''
+    equipment.user_image = ''
+    equipment.borrow_time = time.time()
+    await equipment.update()
+    return Loan_record
+
 
 
 

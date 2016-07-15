@@ -20,26 +20,31 @@
 <head>
     <LINK REL="SHORTCUT ICON" HREF="favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta charset="utf-8" />
+    <meta charset="utf-8" />   
     {% block meta %}<!-- block meta  -->{% endblock %}
     <title>{% block title %} ? {% endblock %} - DL Equipment Management System</title>
     <link rel="stylesheet" href="/static/css/uikit.min.css">
     <link rel="stylesheet" href="/static/css/uikit.gradient.min.css">
     <link rel="stylesheet" href="/static/css/awesome.css" />
+   <link rel="stylesheet" href="/static/css/search.css" /> 
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css" /> 
+   
     <script src="/static/js/jquery.min.js"></script>
     <script src="/static/js/sha1.min.js"></script>
     <script src="/static/js/uikit.min.js"></script>
     <script src="/static/js/sticky.min.js"></script>
     <script src="/static/js/vue.min.js"></script>
-    <script src="/static/js/awesome.js"></script>
+    <script src="/static/js/vue-pagination.min.js"></script>
+    <script src="/static/js/awesome.js"></script>   
+
     {% block beforehead %}<!-- before head  -->{% endblock %}
 </head>
 <body>
     <nav class="uk-navbar uk-navbar-attached uk-margin-bottom">
         <div class="uk-container uk-container-center">
             <a href="/" class="uk-navbar-brand">DL-EMSystem</a>
-<!--
-            <ul class="uk-navbar-nav">
+
+ <!--           <ul class="uk-navbar-nav">
                 <li data-url="blogs"><a href="/"><i class="uk-icon-list"></i> 设备</a></li>
                 <li><a target="_blank" href="http://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000"><i class="uk-icon-book"></i> 我的设备</a></li>
                 <li><a target="_blank" href="https://github.com/michaelliao/awesome-python3-webapp"><i class="uk-icon-code"></i> 源码</a></li>
@@ -67,7 +72,7 @@
 
     <div class="uk-container uk-container-center">
         <div class="uk-grid">
-            <!-- content -->
+         <!-- content -->
             {% block content %}
             {% endblock %}
             <!-- // content -->
@@ -90,5 +95,6 @@
 
         </div>
     </div>
+
 </body>
 </html>

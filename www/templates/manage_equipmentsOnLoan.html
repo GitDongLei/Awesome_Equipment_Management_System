@@ -1,38 +1,42 @@
 {% extends '__base__.html' %}
 
-{% block title %}设备{% endblock %}
+{% block title %}借用设备{% endblock %}
 
 {% block beforehead %}
 
 <script>
 
-var
-    search_info = '{{ search_info }}';
-
-function initVM(data,DateNow,search_info) {
 
 
-
+function initVM(data,DateNow) {
     var vm = new Vue({
         el: '#vm',
         data: {
             equipments: data.equipments,
             page: data.page,
-            DateNow: DateNow,
-            search_msg: search_info,
-            autoCompleteValue: data.equipments
+            user: data.user,
+            DateNow: DateNow
         },
         methods: {
-            onSearch: function (event) {
-                event.preventDefault();
-                location.assign('/manage/equipments?search_info=' + this.search_msg);
+            loanApproval_equipment: function (equipment) {
+                postJSON('/api/equipments/' + equipment.id + '/loanApproval', function (err, r) {
+                    if (err) {
+                        return alert(err.message || err.error || err);
+                    }
+                    refresh();
+                });
             },
-            edit_equipment: function (equipment) {
-                location.assign('/manage/equipments/edit?id=' + equipment.id);
+            loanRefuse_equipment: function (equipment) {
+                postJSON('/api/equipments/' + equipment.id + '/loanRefuse', function (err, r) {
+                    if (err) {
+                        return alert(err.message || err.error || err);
+                    }
+                    refresh();
+                });
             },
-            delete_equipment: function (equipment) {
-                if (confirm('确认要删除“' + equipment.name + '”？删除后不可恢复！')) {
-                    postJSON('/api/equipments/' + equipment.id + '/delete', function (err, r) {
+            return_equipment: function (equipment) {
+                if (confirm('确认“' + equipment.name + '”已归还！')) {
+                    postJSON('/api/equipments/' + equipment.id + '/return', function (err, r) {
                         if (err) {
                             return alert(err.message || err.error || err);
                         }
@@ -40,22 +44,39 @@ function initVM(data,DateNow,search_info) {
                     });
                 }
             },
-            myFunction: function(value)
-            {
-                console.log(value)
+            GetDateDiff: function (startTime, endTime, diffType) {
+                startTime = startTime.replace(/\-/g, "/");
+                endTime = endTime.replace(/\-/g, "/");
+                diffType = diffType.toLowerCase();
+                var sTime = new Date(startTime);
+                var eTime = new Date(endTime);
+                var divNum = 1;
+                switch (diffType) {
+                case "second":
+                    divNum = 1000;
+                break;
+                case "minute":
+                    divNum = 1000 * 60;
+                break;
+                case "hour":
+                    divNum = 1000 * 3600;
+                break;
+                case "day":
+                    divNum = 1000 * 3600 * 24;
+                break;
+                default:
+                break;
+                }
+                var difTest=parseInt((eTime.getTime() - sTime.getTime()) / parseInt(divNum));
+                return difTest;
             }
-
         }
     });
     $('#vm').show();
-
-
-
 }
 
 $(function() {
-    getJSON('/api/equipments', {
-        search_info: search_info,
+    getJSON('/api/equipmentsOnLoan', {
         page: {{ page_index }}
     }, function (err, results) {
         if (err) {
@@ -64,41 +85,23 @@ $(function() {
         $('#loading').hide();
         var myDate = new Date();
         var DateNow = myDate.toLocaleDateString();
-        initVM(results, DateNow, search_info);
+        initVM(results, DateNow);
     });
-
-
 });
 
-
-
-
 </script>
-
-<style>
-#pagination {
-  margin-top:10px;
-  text-align:center;
-}
-
-h2 {
-  margin-top:10px;
-  text-align:center;
-}
-</style>
 
 {% endblock %}
 
 {% block content %}
 
-
     <div class="uk-width-1-1 uk-margin-bottom">
         <div class="uk-panel uk-panel-box">
             <ul class="uk-breadcrumb">
                 <li><a href="/manage/records">借用记录</a></li>
-                <li class="uk-active"><span>设备</span></li>
+                <li><a href="/manage/equipments">设备</a></li>
                 <li><a href="/manage/users">用户</a></li>
-                <li><a href="/manage/equipmentsOnLoan">借用设备</a></li>
+                <li class="uk-active"><span>借用设备</span></li>
             </ul>
         </div>
     </div>
@@ -110,36 +113,8 @@ h2 {
         <span><i class="uk-icon-spinner uk-icon-medium uk-icon-spin"></i> 正在加载...</span>
     </div>
 
-
-
-
     <div id="vm" class="uk-width-1-1">
- 
-        <ul class="uk-subnav">
-            <li>
 
-                <div  id="search">
-
-                        <input v-on="keyup:onSearch | key 13" v-on:keyup.13="onSearch" name="search_msg"  v-model="search_msg" type="text" placeholder="搜索..." list="browsers" name="browser">
-                            {% raw %}
-
-                            <datalist id="browsers">
-                                <option value="{{equipments[0].name}}">
-                                <option value="{{autoCompleteValue[1].name}}">
-                                <option value="{{autoCompleteValue[2].name}}">
-                                <option value="Opera">
-                                <option value="Safari">
-                            </datalist>
-                            {% endraw %}
-                        <a target="_blank" v-on="click:onSearch"><i class="uk-icon-search"  ></i></a>
-                        
-
-                </div>
-            </li>
-            <li>
-                <a href="/manage/equipments/create" class="uk-button "><i class="uk-icon-plus"></i> 添加设备</a>
-            </li>
-        </ul>
         <table class="uk-table uk-table-hover">
             <thead>
                 <tr>
@@ -177,15 +152,16 @@ h2 {
                         <span v-text="equipment.created_at.toDateTime()"></span>
                     </td>
                     <td>
-                        <a href="#0" v-on="click: edit_equipment(equipment)"><i class="uk-icon-edit"></i>
-                        <a href="#0" v-on="click: delete_equipment(equipment)"><i class="uk-icon-trash-o"></i>
+                        <a href="#0" v-if="equipment.warehouse==='借出' " v-on="click: return_equipment(equipment)"  style="color: #0A6;"><i class="uk-icon-smile-o" style="color: #0A6;"></i>归还</a>
+                        <a href="#0" v-if="equipment.warehouse==='申请借出'" v-on="click: loanApproval_equipment(equipment)" style="color: #0A6;"><i class="uk-icon-smile-o" style="color: #0A6;"></i>批准</a>
+                        <a href="#0" v-if="equipment.warehouse==='申请借出'" v-on="click: loanRefuse_equipment(equipment)" style=" color: #F66;"><i class="uk-icon-frown-o" style=" color: #F66;"></i>拒绝</a>
+
                     </td>
                 </tr>
             </tbody>
         </table>
+
         <div v-component="pagination" v-with="page"></div>
     </div>
-
-
 
 {% endblock %}

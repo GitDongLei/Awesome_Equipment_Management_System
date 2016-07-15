@@ -6,24 +6,31 @@
 
 <script>
 
+var
+    search_info = '{{ search_info }}';
 
-
-function initVM(data,DateNow) {
+function initVM(data,DateNow,search_info) {
     var vm = new Vue({
         el: '#vm',
         data: {
             equipments: data.equipments,
             page: data.page,
             user: data.user,
-            DateNow: DateNow
+            DateNow: DateNow,
+            search_msg: search_info
+
         },
         methods: {
+            onSearch: function (event) {
+                event.preventDefault();
+                location.assign('/user/equipments?search_info=' + this.search_msg);
+            },
             edit_equipment: function (equipment) {
                 location.assign('/manage/equipments/edit?id=' + equipment.id);
             },
-            borrow_equipment: function (equipment) {
+            borrow_request_equipment: function (equipment) {
                 if (confirm('确认要借用“' + equipment.name + '”！')) {
-                    postJSON('/api/equipments/' + equipment.id + '/borrow', function (err, r) {
+                    postJSON('/api/equipments/' + equipment.id + '/borrowRequest', function (err, r) {
                         if (err) {
                             return alert(err.message || err.error || err);
                         }
@@ -64,6 +71,7 @@ function initVM(data,DateNow) {
 
 $(function() {
     getJSON('/api/equipments', {
+        search_info: search_info,
         page: {{ page_index }}
     }, function (err, results) {
         if (err) {
@@ -72,7 +80,7 @@ $(function() {
         $('#loading').hide();
         var myDate = new Date();
         var DateNow = myDate.toLocaleDateString();
-        initVM(results, DateNow);
+        initVM(results, DateNow, search_info);
     });
 });
 
@@ -92,14 +100,15 @@ $(function() {
         </div>
     </div>
 
-    <div id="error" class="uk-width-1-1">
-    </div>
-
     <div id="loading" class="uk-width-1-1 uk-text-center">
         <span><i class="uk-icon-spinner uk-icon-medium uk-icon-spin"></i> 正在加载...</span>
     </div>
 
     <div id="vm" class="uk-width-1-1">
+
+        <div  id="search">
+            <input v-on="keyup:onSearch | key 13" name="search_msg"  v-model="search_msg" type="text"  size="40" placeholder="搜索..." >
+        </div>
 
         <table class="uk-table uk-table-hover">
             <thead>
@@ -138,7 +147,7 @@ $(function() {
                         <span v-text="equipment.created_at.toDateTime()"></span>
                     </td>
                     <td>
-                        <a href="#0" v-if="equipment.user_id==='' && equipment.scrapped==='正常'" v-on="click: borrow_equipment(equipment)"  class="uk-button uk-button-primary"> 借用</a>
+                        <a href="#0" v-if="equipment.user_id==='' && equipment.scrapped==='正常'" v-on="click: borrow_request_equipment(equipment)"  class="uk-button uk-button-primary"> 申请借用</a>
                         <a href="#0" v-if="equipment.user_id===user.id && GetDateDiff (equipment.created_at.toDateTime(), DateNow, 'day')>equipment.time_limit" v-on="click: edit_equipment(equipment)"  class="uk-button uk-button-primary"> 续借</a>
                         <button v-if="equipment.user_id===user.id && GetDateDiff (equipment.created_at.toDateTime(), DateNow, 'day')<=equipment.time_limit" class="uk-button uk-htmleditor-button-code" type="button" disabled="disabled"> 续借</button>
                     </td>
